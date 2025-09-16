@@ -1,0 +1,19 @@
+Base:
+  RunMode: debug
+  HTTPPort: 8888
+  ReadTimeout:  100
+  WriteTimeout: 100
+  PageSize: 10
+  JwtSecret:  default
+Db:
+  DriverName: mysql
+  DBUrl:
+Redis:
+  RedisHost:
+  RedisDB:
+  RedisPwd:
+  Timeout:
+  PoolMaxIdle:
+  PoolMaxActive:
+  PoolIdleTimeout:
+  PoolWait:

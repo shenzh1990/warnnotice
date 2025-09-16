@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>系统监控与告警平台</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            padding-top: 20px;
+            background-color: #f8f9fa;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,.1);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+        .status-normal {
+            background-color: #28a745;
+        }
+        .status-warning {
+            background-color: #ffc107;
+        }
+        .status-danger {
+            background-color: #dc3545;
+        }
+        .progress {
+            height: 20px;
+        }
+        .return-config-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mb-4">系统监控与告警平台</h1>
+
+        <!-- 系统名称设置 -->
+        <div class="card">
+            <div class="card-header">
+                <h5>系统名称设置</h5>
+            </div>
+            <div class="card-body">
+                <form id="system-name-form">
+                    <div class="form-group">
+                        <label for="system-name">系统名称</label>
+                        <input type="text" class="form-control" id="system-name" placeholder="请输入系统名称">
+                    </div>
+                    <button type="submit" class="btn btn-primary">保存系统名称</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- 系统状态卡片 -->
+        <div class="card">
+            <div class="card-header">
+                <h5>实时系统状态</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>CPU 使用率</h6>
+                        <div class="progress">
+                            <div id="cpu-progress" class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        <div id="cpu-status" class="mt-2">
+                            <span class="status-indicator status-normal"></span>
+                            <span>正常</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>内存使用率</h6>
+                        <div class="progress">
+                            <div id="mem-progress" class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        <div id="mem-status" class="mt-2">
+                            <span class="status-indicator status-normal"></span>
+                            <span>正常</span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>磁盘使用率</h6>
+                        <div class="progress">
+                            <div id="disk-progress" class="progress-bar" role="progressbar" style="width: 0%">0%</div>
+                        </div>
+                        <div id="disk-status" class="mt-2">
+                            <span class="status-indicator status-normal"></span>
+                            <span>正常</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-center mt-3">
+                    <button id="refresh-status" class="btn btn-primary">刷新状态</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 配置选项卡 -->
+        <ul class="nav nav-tabs" id="configTabs" role="tablist">
+            <li class="nav-item">
+                <a class="nav-link active" id="email-tab" data-toggle="tab" href="#email" role="tab">邮件配置</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="script-tab" data-toggle="tab" href="#script" role="tab">脚本配置</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" id="monitor-tab" data-toggle="tab" href="#monitor" role="tab">监控配置</a>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="configTabsContent">
+            <!-- 邮件配置 -->
+            <div class="tab-pane fade show active" id="email" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="email-config-form">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="smtp-host">SMTP服务器</label>
+                                    <input type="text" class="form-control" id="smtp-host" placeholder="smtp.example.com">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="smtp-port">端口</label>
+                                    <input type="number" class="form-control" id="smtp-port" placeholder="587">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="email-username">用户名</label>
+                                    <input type="text" class="form-control" id="email-username" placeholder="your-email@example.com">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="email-password">密码</label>
+                                    <input type="password" class="form-control" id="email-password">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="from-email">发件人邮箱</label>
+                                    <input type="email" class="form-control" id="from-email" placeholder="from@example.com">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="to-email">收件人邮箱</label>
+                                    <input type="email" class="form-control" id="to-email" placeholder="to@example.com">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">保存配置</button>
+                            <button type="button" id="test-email" class="btn btn-secondary">测试邮件</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 脚本配置 -->
+            <div class="tab-pane fade" id="script" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="script-config-form">
+                            <div class="form-group">
+                                <label for="script-path">脚本路径</label>
+                                <input type="text" class="form-control" id="script-path" placeholder="C:\path\to\your\script.bat">
+                            </div>
+                            <div class="form-group">
+                                <label for="script-parameters">脚本参数</label>
+                                <input type="text" class="form-control" id="script-parameters" placeholder="参数1 参数2">
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="script-timeout">超时时间(秒)</label>
+                                    <input type="number" class="form-control" id="script-timeout" value="30">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="script-interval">执行间隔(分钟，0为不自动执行)</label>
+                                    <input type="number" class="form-control" id="script-interval" value="0">
+                                </div>
+                            </div>
+
+                            <hr>
+                            <h5>脚本返回值告警配置</h5>
+                            <p>配置不同返回值对应的告警内容（返回值为0时不发送告警）</p>
+
+                            <div id="return-configs-container">
+                                <!-- 动态添加的返回值配置项将在这里显示 -->
+                            </div>
+
+                            <button type="button" id="add-return-config" class="btn btn-info mb-3">添加告警配置</button>
+                            <button type="submit" class="btn btn-primary">保存配置</button>
+                            <button type="button" id="test-script" class="btn btn-secondary">测试脚本</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 监控配置 -->
+            <div class="tab-pane fade" id="monitor" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="monitor-config-form">
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="monitor-interval">监控间隔(分钟)</label>
+                                    <input type="number" class="form-control" id="monitor-interval" value="5">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="avg-count">平均值计算次数</label>
+                                    <input type="number" class="form-control" id="avg-count" value="3">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-4">
+                                    <label for="cpu-threshold">CPU阈值(%)</label>
+                                    <input type="number" step="0.1" class="form-control" id="cpu-threshold" value="80">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="mem-threshold">内存阈值(%)</label>
+                                    <input type="number" step="0.1" class="form-control" id="mem-threshold" value="80">
+                                </div>
+                                <div class="form-group col-md-4">
+                                    <label for="disk-threshold">磁盘阈值(%)</label>
+                                    <input type="number" step="0.1" class="form-control" id="disk-threshold" value="85">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">保存配置</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 存储返回值配置的数组
+        let returnConfigs = [];
+
+        $(document).ready(function() {
+            // 加载现有配置
+            loadSystemName();
+            loadEmailConfig();
+            loadScriptConfig();
+            loadScriptReturnConfigs();
+            loadMonitorConfig();
+            refreshSystemStatus();
+
+            // 刷新状态按钮
+            $('#refresh-status').click(function() {
+                refreshSystemStatus();
+            });
+
+            // 系统名称表单提交
+            $('#system-name-form').submit(function(e) {
+                e.preventDefault();
+                saveSystemName();
+            });
+
+            // 邮件配置表单提交
+            $('#email-config-form').submit(function(e) {
+                e.preventDefault();
+                saveEmailConfig();
+            });
+
+            // 测试邮件按钮
+            $('#test-email').click(function() {
+                testEmail();
+            });
+
+            // 脚本配置表单提交
+            $('#script-config-form').submit(function(e) {
+                e.preventDefault();
+                saveScriptConfig();
+            });
+
+            // 测试脚本按钮
+            $('#test-script').click(function() {
+                testScript();
+            });
+
+            // 监控配置表单提交
+            $('#monitor-config-form').submit(function(e) {
+                e.preventDefault();
+                saveMonitorConfig();
+            });
+
+            // 添加返回值配置按钮
+            $('#add-return-config').click(function() {
+                addReturnConfigItem();
+            });
+        });
+
+        // 刷新系统状态
+        function refreshSystemStatus() {
+            $.get('/api/v1/monitor/status')
+                .done(function(response) {
+                    if (response.code === 200) {
+                        const data = response.data;
+
+                        // 更新CPU状态
+                        $('#cpu-progress').css('width', data.cpu_usage + '%').text(data.cpu_usage.toFixed(2) + '%');
+                        updateStatusIndicator('cpu', data.cpu_usage);
+
+                        // 更新内存状态
+                        $('#mem-progress').css('width', data.mem_usage + '%').text(data.mem_usage.toFixed(2) + '%');
+                        updateStatusIndicator('mem', data.mem_usage);
+
+                        // 更新磁盘状态
+                        $('#disk-progress').css('width', data.disk_usage + '%').text(data.disk_usage.toFixed(2) + '%');
+                        updateStatusIndicator('disk', data.disk_usage);
+                    } else {
+                        alert('获取系统状态失败: ' + response.msg);
+                    }
+                })
+                .fail(function() {
+                    alert('获取系统状态失败');
+                });
+        }
+
+        // 更新状态指示器
+        function updateStatusIndicator(type, value) {
+            let statusElement = $('#' + type + '-status');
+            let indicator = statusElement.find('.status-indicator');
+
+            indicator.removeClass('status-normal status-warning status-danger');
+
+            if (value < 70) {
+                indicator.addClass('status-normal');
+                statusElement.find('span:last').text('正常');
+            } else if (value < 85) {
+                indicator.addClass('status-warning');
+                statusElement.find('span:last').text('警告');
+            } else {
+                indicator.addClass('status-danger');
+                statusElement.find('span:last').text('危险');
+            }
+        }
+
+        // 加载系统名称
+        function loadSystemName() {
+            $.get('/api/v1/system/name')
+                .done(function(response) {
+                    if (response.code === 200 && response.data) {
+                        $('#system-name').val(response.data.name);
+                    }
+                });
+        }
+
+        // 保存系统名称
+        function saveSystemName() {
+            const name = $('#system-name').val();
+            if (!name) {
+                alert('请输入系统名称');
+                return;
+            }
+
+            $.ajax({
+                url: '/api/v1/system/name',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({name: name})
+            })
+            .done(function(response) {
+                if (response.code === 200) {
+                    alert('系统名称保存成功');
+                } else {
+                    alert('保存失败: ' + response.msg);
+                }
+            })
+            .fail(function() {
+                alert('保存失败');
+            });
+        }
+
+        // 加载邮件配置
+        function loadEmailConfig() {
+            $.get('/api/v1/email/config')
+                .done(function(response) {
+                    if (response.code === 200 && response.data) {
+                        const data = response.data;
+                        $('#smtp-host').val(data.smtp_host);
+                        $('#smtp-port').val(data.smtp_port);
+                        $('#email-username').val(data.username);
+                        $('#email-password').val(data.password);
+                        $('#from-email').val(data.from);
+                        $('#to-email').val(data.to);
+                    }
+                });
+        }
+
+        // 保存邮件配置
+        function saveEmailConfig() {
+            const config = {
+                smtp_host: $('#smtp-host').val(),
+                smtp_port: parseInt($('#smtp-port').val()),
+                username: $('#email-username').val(),
+                password: $('#email-password').val(),
+                from: $('#from-email').val(),
+                to: $('#to-email').val()
+            };
+
+            $.ajax({
+                url: '/api/v1/email/config',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(config)
+            })
+            .done(function(response) {
+                if (response.code === 200) {
+                    alert('邮件配置保存成功');
+                } else {
+                    alert('保存失败: ' + response.msg);
+                }
+            })
+            .fail(function() {
+                alert('保存失败');
+            });
+        }
+
+        // 测试邮件
+        function testEmail() {
+            $.ajax({
+                url: '/api/v1/email/test',
+                method: 'POST'
+            })
+            .done(function(response) {
+                if (response.code === 200) {
+                    alert('测试邮件发送成功');
+                } else {
+                    alert('测试失败: ' + response.msg);
+                }
+            })
+            .fail(function() {
+                alert('测试失败');
+            });
+        }
+
+        // 加载脚本配置
+        function loadScriptConfig() {
+            $.get('/api/v1/script/config')
+                .done(function(response) {
+                    if (response.code === 200 && response.data) {
+                        const data = response.data;
+                        $('#script-path').val(data.path);
+                        $('#script-parameters').val(data.parameters);
+                        $('#script-timeout').val(data.timeout);
+                        $('#script-interval').val(data.interval);
+                    }
+                });
+        }
+
+        // 加载脚本返回值配置
+        function loadScriptReturnConfigs() {
+            $.get('/api/v1/script/return-configs')
+                .done(function(response) {
+                    if (response.code === 200 && response.data) {
+                        returnConfigs = response.data;
+                        renderReturnConfigs();
+                    }
+                });
+        }
+
+        // 渲染返回值配置项
+        function renderReturnConfigs() {
+            const container = $('#return-configs-container');
+            container.empty();
+
+            for (const returnValue in returnConfigs) {
+                if (returnConfigs.hasOwnProperty(returnValue)) {
+                    addReturnConfigItem(parseInt(returnValue), returnConfigs[returnValue]);
+                }
+            }
+
+            // 如果没有配置项，添加一个默认的
+            if (Object.keys(returnConfigs).length === 0) {
+                addReturnConfigItem();
+            }
+        }
+
+        // 添加返回值配置项
+        function addReturnConfigItem(returnValue = 1, alertText = '') {
+            const itemId = 'return-config-' + Date.now();
+            const itemHtml = `
+                <div class="return-config-item" id="${itemId}">
+                    <div class="form-row">
+                        <div class="form-group col-md-3">
+                            <label>返回值</label>
+                            <input type="number" class="form-control return-value" value="${returnValue}">
+                        </div>
+                        <div class="form-group col-md-7">
+                            <label>告警文本</label>
+                            <textarea class="form-control alert-text" rows="2">${alertText}</textarea>
+                        </div>
+                        <div class="form-group col-md-2 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger remove-return-config">删除</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            $('#return-configs-container').append(itemHtml);
+
+            // 绑定删除事件
+            $('#' + itemId + ' .remove-return-config').click(function() {
+                $('#' + itemId).remove();
+            });
+        }
+
+        // 保存脚本配置
+        function saveScriptConfig() {
+            const config = {
+                path: $('#script-path').val(),
+                parameters: $('#script-parameters').val(),
+                timeout: parseInt($('#script-timeout').val()),
+                interval: parseInt($('#script-interval').val())
+            };
+
+            // 保存脚本基本配置
+            $.ajax({
+                url: '/api/v1/script/config',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(config)
+            })
+            .done(function(response) {
+                if (response.code !== 200) {
+                    alert('保存脚本配置失败: ' + response.msg);
+                    return;
+                }
+
+                // 保存返回值配置
+                saveReturnConfigs(function() {
+                    alert('脚本配置保存成功');
+                });
+            })
+            .fail(function() {
+                alert('保存脚本配置失败');
+            });
+        }
+
+        // 保存返回值配置
+        function saveReturnConfigs(callback) {
+            const promises = [];
+
+            $('.return-config-item').each(function() {
+                const returnValue = parseInt($(this).find('.return-value').val());
+                const alertText = $(this).find('.alert-text').val();
+
+                // 只保存有效的配置（返回值不为0且告警文本不为空）
+                if (returnValue !== 0 && alertText.trim() !== '') {
+                    const promise = $.ajax({
+                        url: '/api/v1/script/return-config',
+                        method: 'POST',
+                        contentType: 'application/json',
+                        data: JSON.stringify({
+                            return_value: returnValue,
+                            alert_text: alertText
+                        })
+                    });
+                    promises.push(promise);
+                }
+            });
+
+            // 等待所有保存操作完成
+            Promise.all(promises)
+                .then(function() {
+                    callback();
+                })
+                .catch(function() {
+                    alert('保存返回值配置时出现错误');
+                });
+        }
+
+        // 测试脚本
+        function testScript() {
+            $.ajax({
+                url: '/api/v1/script/test',
+                method: 'POST'
+            })
+            .done(function(response) {
+                if (response.code === 200) {
+                    alert('脚本执行成功，返回值: ' + response.data.result);
+                } else {
+                    alert('测试失败: ' + response.msg);
+                }
+            })
+            .fail(function() {
+                alert('测试失败');
+            });
+        }
+
+        // 加载监控配置
+        function loadMonitorConfig() {
+            $.get('/api/v1/monitor/config')
+                .done(function(response) {
+                    if (response.code === 200 && response.data) {
+                        const data = response.data;
+                        $('#monitor-interval').val(data.interval);
+                        $('#avg-count').val(data.avg_count);
+                        $('#cpu-threshold').val(data.cpu_threshold);
+                        $('#mem-threshold').val(data.mem_threshold);
+                        $('#disk-threshold').val(data.disk_threshold);
+                    }
+                });
+        }
+
+        // 保存监控配置
+        function saveMonitorConfig() {
+            const config = {
+                interval: parseInt($('#monitor-interval').val()),
+                avg_count: parseInt($('#avg-count').val()),
+                cpu_threshold: parseFloat($('#cpu-threshold').val()),
+                mem_threshold: parseFloat($('#mem-threshold').val()),
+                disk_threshold: parseFloat($('#disk-threshold').val())
+            };
+
+            $.ajax({
+                url: '/api/v1/monitor/config',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(config)
+            })
+            .done(function(response) {
+                if (response.code === 200) {
+                    alert('监控配置保存成功');
+                } else {
+                    alert('保存失败: ' + response.msg);
+                }
+            })
+            .fail(function() {
+                alert('保存失败');
+            });
+        }
+    </script>
+</body>
+</html>
