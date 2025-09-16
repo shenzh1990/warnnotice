@@ -127,8 +127,18 @@ func createTables() error {
 		output TEXT,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	);`
-
-	tables := []string{systemConfigSQL, emailConfigSQL, scriptConfigSQL, scriptReturnConfigSQL, monitorConfigSQL, systemStatusSQL, scriptHistorySQL}
+	// 新增告警消息发送记录表
+	alertHistorySQL := `
+	CREATE TABLE IF NOT EXISTS alert_history (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		receiver TEXT NOT NULL,
+		subject TEXT NOT NULL,
+		content TEXT NOT NULL,
+		send_status BOOLEAN NOT NULL,  -- true: 成功, false: 失败
+		error_message TEXT,            -- 错误信息，如果发送失败
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);`
+	tables := []string{systemConfigSQL, emailConfigSQL, scriptConfigSQL, scriptReturnConfigSQL, monitorConfigSQL, systemStatusSQL, scriptHistorySQL, alertHistorySQL}
 
 	for _, sql := range tables {
 		_, err := DB.Exec(sql)
@@ -552,6 +562,96 @@ func GetScriptHistory(limit int) ([]ScriptHistory, error) {
 		err := rows.Scan(&history.ID, &history.Result, &history.Output, &history.CreatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("扫描脚本执行历史失败: %v", err)
+		}
+		histories = append(histories, history)
+	}
+
+	// 检查迭代过程中是否有错误
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("遍历结果时出错: %v", err)
+	}
+
+	return histories, nil
+}
+
+// AlertHistory 告警消息发送历史结构
+type AlertHistory struct {
+	ID           int    `json:"id"`
+	Receiver     string `json:"receiver"`
+	Subject      string `json:"subject"`
+	Content      string `json:"content"`
+	SendStatus   bool   `json:"send_status"`
+	ErrorMessage string `json:"error_message"`
+	CreatedAt    string `json:"created_at"`
+}
+
+// SaveAlertHistory 保存告警消息发送记录
+func SaveAlertHistory(receiver, subject, content string, sendStatus bool, errorMessage string) error {
+	// 带重试机制的数据库操作
+	var lastErr error
+	for i := 0; i < 3; i++ {
+		stmt, err := DB.Prepare("INSERT INTO alert_history (receiver, subject, content, send_status, error_message) VALUES (?, ?, ?, ?, ?)")
+		if err != nil {
+			lastErr = fmt.Errorf("准备插入语句失败: %v", err)
+			time.Sleep(time.Millisecond * 100)
+			continue
+		}
+		defer stmt.Close()
+
+		_, err = stmt.Exec(receiver, subject, content, sendStatus, errorMessage)
+		if err != nil {
+			stmt.Close()
+			lastErr = fmt.Errorf("插入告警消息发送历史失败: %v", err)
+			time.Sleep(time.Millisecond * 100)
+			continue
+		}
+
+		return nil
+	}
+
+	return lastErr
+}
+
+// GetAlertHistory 获取告警消息发送历史记录（按时间倒序）
+func GetAlertHistory(limit int) ([]AlertHistory, error) {
+	rows, err := DB.Query("SELECT id, receiver, subject, content, send_status, error_message, created_at FROM alert_history ORDER BY created_at DESC LIMIT ?", limit)
+	if err != nil {
+		return nil, fmt.Errorf("查询告警消息发送历史失败: %v", err)
+	}
+	defer rows.Close()
+
+	var histories []AlertHistory
+	for rows.Next() {
+		var history AlertHistory
+		err := rows.Scan(&history.ID, &history.Receiver, &history.Subject, &history.Content, &history.SendStatus, &history.ErrorMessage, &history.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("扫描告警消息发送历史失败: %v", err)
+		}
+		histories = append(histories, history)
+	}
+
+	// 检查迭代过程中是否有错误
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("遍历结果时出错: %v", err)
+	}
+
+	return histories, nil
+}
+
+// GetAllAlertHistory 获取所有告警消息发送历史记录（按时间倒序）
+func GetAllAlertHistory() ([]AlertHistory, error) {
+	rows, err := DB.Query("SELECT id, receiver, subject, content, send_status, error_message, created_at FROM alert_history ORDER BY created_at DESC")
+	if err != nil {
+		return nil, fmt.Errorf("查询告警消息发送历史失败: %v", err)
+	}
+	defer rows.Close()
+
+	var histories []AlertHistory
+	for rows.Next() {
+		var history AlertHistory
+		err := rows.Scan(&history.ID, &history.Receiver, &history.Subject, &history.Content, &history.SendStatus, &history.ErrorMessage, &history.CreatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("扫描告警消息发送历史失败: %v", err)
 		}
 		histories = append(histories, history)
 	}

@@ -116,51 +116,35 @@
             <li class="nav-item">
                 <a class="nav-link" id="monitor-tab" data-toggle="tab" href="#monitor" role="tab">监控配置</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link" id="alert-tab" data-toggle="tab" href="#alert" role="tab">告警消息发送历史</a>
+            </li>
         </ul>
 
         <div class="tab-content" id="configTabsContent">
-            <!-- 邮件配置 -->
-            <div class="tab-pane fade show active" id="email" role="tabpanel">
-                <div class="card">
+            <div class="tab-pane fade" id="alert" role="tabpanel" aria-labelledby="nav-alert-history-tab">
+                <div class="card mt-3">
+                    <div class="card-header">告警消息发送历史</div>
                     <div class="card-body">
-                        <form id="email-config-form">
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="smtp-host">SMTP服务器</label>
-                                    <input type="text" class="form-control" id="smtp-host" placeholder="smtp.example.com">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="smtp-port">端口</label>
-                                    <input type="number" class="form-control" id="smtp-port" placeholder="587">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="email-username">用户名</label>
-                                    <input type="text" class="form-control" id="email-username" placeholder="your-email@example.com">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="email-password">密码</label>
-                                    <input type="password" class="form-control" id="email-password">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group col-md-6">
-                                    <label for="from-email">发件人邮箱</label>
-                                    <input type="email" class="form-control" id="from-email" placeholder="from@example.com">
-                                </div>
-                                <div class="form-group col-md-6">
-                                    <label for="to-email">收件人邮箱</label>
-                                    <input type="email" class="form-control" id="to-email" placeholder="to@example.com">
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-primary">保存配置</button>
-                            <button type="button" id="test-email" class="btn btn-secondary">测试邮件</button>
-                        </form>
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                <tr>
+                                    <th>接收人</th>
+                                    <th>主题</th>
+                                    <th>内容</th>
+                                    <th>发送状态</th>
+                                    <th>发送时间</th>
+                                </tr>
+                                </thead>
+                                <tbody id="alert-history-tbody">
+                                <!-- 告警历史记录将通过JavaScript动态加载到这里 -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
-
             <!-- 脚本配置 -->
             <div class="tab-pane fade" id="script" role="tabpanel">
                 <div class="card">
@@ -188,12 +172,11 @@
                             <hr>
                             <h5>脚本返回值告警配置</h5>
                             <p>配置不同返回值对应的告警内容（返回值为0时不发送告警）</p>
-
+                            <button type="button" id="add-return-config" class="btn btn-info mb-3">添加告警配置</button>
                             <div id="return-configs-container">
                                 <!-- 动态添加的返回值配置项将在这里显示 -->
                             </div>
 
-                            <button type="button" id="add-return-config" class="btn btn-info mb-3">添加告警配置</button>
                             <button type="submit" class="btn btn-primary">保存配置</button>
                             <button type="button" id="test-script" class="btn btn-secondary">测试脚本</button>
                         </form>
@@ -235,6 +218,47 @@
                     </div>
                 </div>
             </div>
+            <!-- 邮件配置 -->
+            <div class="tab-pane fade show active" id="email" role="tabpanel">
+                <div class="card">
+                    <div class="card-body">
+                        <form id="email-config-form">
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="smtp-host">SMTP服务器</label>
+                                    <input type="text" class="form-control" id="smtp-host" placeholder="smtp.example.com">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="smtp-port">端口</label>
+                                    <input type="number" class="form-control" id="smtp-port" placeholder="587">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="email-username">用户名</label>
+                                    <input type="text" class="form-control" id="email-username" placeholder="your-email@example.com">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="email-password">密码</label>
+                                    <input type="password" class="form-control" id="email-password">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group col-md-6">
+                                    <label for="from-email">发件人邮箱</label>
+                                    <input type="email" class="form-control" id="from-email" placeholder="from@example.com">
+                                </div>
+                                <div class="form-group col-md-6">
+                                    <label for="to-email">收件人邮箱</label>
+                                    <input type="email" class="form-control" id="to-email" placeholder="to@example.com">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary">保存配置</button>
+                            <button type="button" id="test-email" class="btn btn-secondary">测试邮件</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -245,6 +269,9 @@
         let returnConfigs = [];
 
         $(document).ready(function() {
+            // 每30秒刷新一次告警消息发送历史
+            setInterval(fetchAlertHistory, 30000);
+            fetchAlertHistory();
             // 加载现有配置
             loadSystemName();
             loadEmailConfig();
@@ -637,6 +664,27 @@
             })
             .fail(function() {
                 alert('保存失败');
+            });
+        }
+
+        // 获取告警消息发送历史
+        function fetchAlertHistory() {
+            $.get('/api/v1/alert/history?limit=50', function(res) {
+                if (res.code === 200) {
+                    let html = '';
+                    res.data.forEach(function(item) {
+                        let statusText = item.send_status ? '成功' : '失败';
+                        let statusClass = item.send_status ? 'text-success' : 'text-danger';
+                        html += `<tr>
+                                    <td>${item.receiver}</td>
+                                    <td>${item.subject}</td>
+                                     <td>${item.content}</td>
+                                    <td><span class="${statusClass}">${statusText}</span></td>
+                                    <td>${item.created_at}</td>
+                                </tr>`;
+                    });
+                    $('#alert-history-tbody').html(html);
+                }
             });
         }
     </script>

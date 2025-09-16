@@ -52,6 +52,9 @@ func InitRouter() *gin.Engine {
 		api.GET("/monitor/config", controller.GetMonitorConfig)
 		api.GET("/monitor/status", controller.GetSystemStatus)
 		api.GET("/monitor/status/history", controller.GetSystemStatusHistory)
+
+		// 告警消息发送历史路由
+		api.GET("/alert/history", controller.GetAlertHistory)
 	}
 
 	r.GET("/", func(c *gin.Context) {

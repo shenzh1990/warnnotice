@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"warnnotice/database"
 	"warnnotice/pkg/e"
+	"warnnotice/scheduler"
 	"warnnotice/util"
 )
 
@@ -37,6 +38,7 @@ func SetMonitorConfig(c *gin.Context) {
 	if e.Monitor != nil {
 		e.Monitor.Config = config
 	}
+	scheduler.RestartMonitor()
 
 	c.JSON(http.StatusOK, gin.H{
 		"code": e.SUCCESS,

@@ -9,4 +9,6 @@ var (
 	ScriptConfig       *util.ScriptConfig
 	ScriptReturnConfig map[int]string // 脚本返回值配置
 	SystemName         string
+	MonitorStopChan    chan bool
+	ScriptStopChan     chan bool
 )

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"warnnotice/database"
 	"warnnotice/pkg/e"
+	"warnnotice/scheduler"
 	"warnnotice/util"
 )
 
@@ -47,7 +48,7 @@ func GetScriptConfig(c *gin.Context) {
 		})
 		return
 	}
-
+	scheduler.RestartScriptScheduler()
 	c.JSON(http.StatusOK, gin.H{
 		"code": e.SUCCESS,
 		"msg":  "获取脚本配置成功",
