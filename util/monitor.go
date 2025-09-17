@@ -5,6 +5,7 @@ import (
 	"math"
 	"os"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/shirou/gopsutil/v3/cpu"
@@ -14,10 +15,11 @@ import (
 
 // SystemStatus 系统状态结构
 type SystemStatus struct {
-	CPUUsage  float64 `json:"cpu_usage"`  // CPU使用率
-	MemUsage  float64 `json:"mem_usage"`  // 内存使用率
-	DiskUsage float64 `json:"disk_usage"` // 磁盘使用率
-	Timestamp int64   `json:"timestamp"`  // 时间戳
+	CPUUsage   float64            `json:"cpu_usage"`   // CPU使用率
+	MemUsage   float64            `json:"mem_usage"`   // 内存使用率
+	DiskUsage  float64            `json:"disk_usage"`  // 磁盘使用率(平均值)
+	DiskUsages map[string]float64 `json:"disk_usages"` // 各磁盘分区使用率
+	Timestamp  int64              `json:"timestamp"`   // 时间戳
 }
 
 // MonitorConfig 监控配置结构
@@ -39,7 +41,8 @@ type SystemMonitor struct {
 // GetSystemStatus 获取当前系统状态
 func GetSystemStatus() (*SystemStatus, error) {
 	status := &SystemStatus{
-		Timestamp: time.Now().Unix(),
+		Timestamp:  time.Now().Unix(),
+		DiskUsages: make(map[string]float64),
 	}
 
 	// 获取CPU使用率
@@ -56,17 +59,58 @@ func GetSystemStatus() (*SystemStatus, error) {
 	}
 	status.MemUsage = memStat.UsedPercent
 
-	// 获取磁盘使用率
-	diskStat, err := disk.Usage("/")
+	// 获取所有磁盘分区使用率
+	parts, err := disk.Partitions(true)
 	if err != nil {
-		// 如果根目录获取失败，尝试当前目录
-		pwd, _ := os.Getwd()
-		diskStat, err = disk.Usage(pwd)
+		// 如果无法获取分区信息，使用原来的方法
+		diskStat, err := disk.Usage("/")
 		if err != nil {
-			return nil, fmt.Errorf("获取磁盘使用率失败: %v", err)
+			// 如果根目录获取失败，尝试当前目录
+			pwd, _ := os.Getwd()
+			diskStat, err = disk.Usage(pwd)
+			if err != nil {
+				return nil, fmt.Errorf("获取磁盘使用率失败: %v", err)
+			}
+		}
+		status.DiskUsage = diskStat.UsedPercent
+		status.DiskUsages["/"] = diskStat.UsedPercent
+	} else {
+		var totalUsage float64
+		var validPartitions int
+
+		// 遍历所有分区
+		for _, part := range parts {
+			// 跳过一些虚拟文件系统
+			if strings.HasPrefix(part.Fstype, "tmpfs") ||
+				strings.HasPrefix(part.Fstype, "sysfs") ||
+				strings.HasPrefix(part.Fstype, "proc") ||
+				strings.HasPrefix(part.Fstype, "devtmpfs") ||
+				strings.HasPrefix(part.Fstype, "cgroup") ||
+				part.Mountpoint == "/dev" ||
+				part.Mountpoint == "/sys" ||
+				part.Mountpoint == "/proc" {
+				continue
+			}
+
+			diskStat, err := disk.Usage(part.Mountpoint)
+			if err != nil {
+				// 忽略单个分区错误
+				continue
+			}
+
+			status.DiskUsages[part.Mountpoint] = diskStat.UsedPercent
+			totalUsage += diskStat.UsedPercent
+			validPartitions++
+		}
+
+		// 计算平均磁盘使用率
+		if validPartitions > 0 {
+			status.DiskUsage = totalUsage / float64(validPartitions)
+		} else {
+			// 如果没有有效的分区，使用默认值
+			status.DiskUsage = 0
 		}
 	}
-	status.DiskUsage = diskStat.UsedPercent
 
 	return status, nil
 }
@@ -120,7 +164,20 @@ func (m *SystemMonitor) CheckThreshold() error {
 	}
 
 	if avgDisk > m.Config.DiskThreshold {
-		alerts = append(alerts, fmt.Sprintf("磁盘使用率%.2f%%超过阈值%.2f%%", avgDisk, m.Config.DiskThreshold))
+		// 检查具体的磁盘分区使用情况
+		latestStatus := m.StatusHistory[len(m.StatusHistory)-1]
+		diskAlerts := make([]string, 0)
+		for mountPoint, usage := range latestStatus.DiskUsages {
+			if usage > m.Config.DiskThreshold {
+				diskAlerts = append(diskAlerts, fmt.Sprintf("%s分区使用率%.2f%%", mountPoint, usage))
+			}
+		}
+
+		if len(diskAlerts) > 0 {
+			alerts = append(alerts, fmt.Sprintf("磁盘使用率超过阈值%.2f%%: %s", m.Config.DiskThreshold, strings.Join(diskAlerts, ", ")))
+		} else {
+			alerts = append(alerts, fmt.Sprintf("平均磁盘使用率%.2f%%超过阈值%.2f%%", avgDisk, m.Config.DiskThreshold))
+		}
 	}
 
 	// 如果有超过阈值的情况，触发告警
